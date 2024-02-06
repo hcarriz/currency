@@ -59,6 +59,15 @@ func (e MismatchError) Error() string {
 	return fmt.Sprintf("amounts %q and %q have mismatched currency codes", e.A, e.B)
 }
 
+// InvalidFormat is returned when the format of the string does not follow (9.99, USD) convention.
+type InvalidFormat struct {
+	Content string
+}
+
+func (e InvalidFormat) Error() string {
+	return fmt.Sprintf("invalid format \"%s\"", e.Content)
+}
+
 // Amount stores a decimal number with its currency code.
 type Amount struct {
 	number       apd.Decimal
@@ -360,12 +369,32 @@ func (a Amount) Value() (driver.Value, error) {
 // Allows scanning amounts from a PostgreSQL composite type.
 func (a *Amount) Scan(src interface{}) error {
 	// Wire format: "(9.99,USD)".
-	input := src.(string)
+
+	input := ""
+
+	switch v := src.(type) {
+	case string:
+		input = v
+	case []byte:
+		input = string(v)
+	case nil:
+	case int, float64:
+		return InvalidCurrencyCodeError{}
+	default:
+		return fmt.Errorf("unknown type %T", v)
+	}
+
 	if len(input) == 0 {
 		return nil
 	}
+
 	input = strings.Trim(input, "()")
 	values := strings.Split(input, ",")
+
+	if len(values) != 2 {
+		return InvalidFormat{input}
+	}
+
 	n := values[0]
 	currencyCode := values[1]
 	number := apd.Decimal{}

@@ -897,17 +897,26 @@ func TestAmount_Value(t *testing.T) {
 
 func TestAmount_Scan(t *testing.T) {
 	tests := []struct {
-		src              string
+		src              interface{}
 		wantNumber       string
 		wantCurrencyCode string
 		wantError        string
 	}{
 		{"", "0", "", ""},
+		{"(3,USD)", "3", "USD", ""},
 		{"(3.45,USD)", "3.45", "USD", ""},
 		{"(3.45,)", "0", "", `invalid currency code ""`},
 		{"(,USD)", "0", "", `invalid number ""`},
 		{"(0,)", "0", "", ""},
 		{"(0,   )", "0", "", ""},
+		{"(1,2,USD)", "0", "", `invalid format "1,2,USD"`},
+		{"(1234.59,EUR)", "1234.59", "EUR", ""},
+		{"(Something)", "0", "", `invalid format "Something"`},
+		{"(USD,0)", "0", "", `invalid number "USD"`},
+		{nil, "0", "", ""},
+		{1, "0", "", `invalid currency code ""`},
+		{1.0, "0", "", `invalid currency code ""`},
+		{[]byte("(3.45,USD)"), "3.45", "USD", ""},
 	}
 
 	for _, tt := range tests {
