@@ -164,6 +164,11 @@ func (f *Formatter) getPattern(amount Amount) string {
 		patterns = strings.Split(f.format.standardPattern, ";")
 	}
 
+	// Nilaway
+	if patterns == nil {
+		return ""
+	}
+
 	switch {
 	case amount.IsNegative():
 		if len(patterns) == 1 {
@@ -197,6 +202,12 @@ func (f *Formatter) formatNumber(amount Amount) string {
 	}
 	amount = amount.RoundTo(maxDigits, f.RoundingMode)
 	numberParts := strings.Split(amount.Number(), ".")
+
+	// Nilaway
+	if numberParts == nil {
+		return ""
+	}
+
 	majorDigits := f.groupMajorDigits(numberParts[0])
 	minorDigits := ""
 	if len(numberParts) == 2 {
